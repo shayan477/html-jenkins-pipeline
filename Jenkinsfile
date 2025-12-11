@@ -19,7 +19,6 @@ pipeline {
         stage('Deploy to Production') {
             steps {
                 echo 'Deploying to production...'
-                // Deployment steps here
             }
         }
 
@@ -41,6 +40,22 @@ pipeline {
                     }
                 }
             }
+        }
+    }
+
+    // ✅ Notifications go here
+    post {
+        success {
+            slackSend(
+                color: 'good',
+                message: "Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            )
+        }
+        failure {
+            slackSend(
+                color: 'danger',
+                message: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
+            )
         }
     }
 }
