@@ -1,61 +1,63 @@
 pipeline {
-    agent any
-
+    agent {
+        label 'centos'
+    }
+    
     stages {
+        stage('Checkout') {
+            steps {
+                echo 'Checking out source code...'
+                checkout scm
+            }
+        }
+        
         stage('Build') {
             steps {
-                echo 'Building the project...'
+                echo "Building HTML project from branch: ${env.GIT_BRANCH}"
+                sh '''
+                    echo "Current directory contents:"
+                    ls -la
+                    echo "Building complete!"
+                '''
             }
         }
-
-        stage('Approve Deployment') {
+        
+        stage('Test') {
             steps {
-                input message: 'Deploy to production?', 
-                      ok: 'Deploy',
-                      submitter: 'admin'
+                echo 'Running validation tests...'
+                sh '''
+                    echo "Testing branch: ${env.GIT_BRANCH}"
+                    if [ -f index.html ]; then
+                        echo "✓ index.html found"
+                    else
+                        echo "✗ index.html not found"
+                    fi
+                '''
             }
         }
-
-        stage('Deploy to Production') {
+        
+        stage('Deploy') {
             steps {
-                echo 'Deploying to production...'
-            }
-        }
-
-        stage('Parallel Tests') {
-            parallel {
-                stage('Unit Tests') {
-                    steps {
-                        sh 'mvn test'
-                    }
-                }
-                stage('Integration Tests') {
-                    steps {
-                        sh 'mvn integration-test'
-                    }
-                }
-                stage('Security Scan') {
-                    steps {
-                        sh 'mvn dependency-check:check'
-                    }
-                }
+                echo 'Deploying HTML files...'
+                sh '''
+                    mkdir -p ~/html-deploy/${GIT_BRANCH}
+                    cp -r * ~/html-deploy/${GIT_BRANCH}/ || true
+                    echo "✓ Deployed to: ~/html-deploy/${GIT_BRANCH}"
+                    ls -lh ~/html-deploy/${GIT_BRANCH}
+                '''
             }
         }
     }
-
-    // ✅ Notifications go here
+    
     post {
         success {
-            slackSend(
-                color: 'good',
-                message: "Build Successful: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-            )
+            echo "✓ Pipeline completed successfully for branch: ${env.GIT_BRANCH}"
         }
         failure {
-            slackSend(
-                color: 'danger',
-                message: "Build Failed: ${env.JOB_NAME} #${env.BUILD_NUMBER}"
-            )
+            echo "✗ Pipeline failed for branch: ${env.GIT_BRANCH}"
+        }
+        always {
+            echo "Pipeline execution finished"
         }
     }
 }
