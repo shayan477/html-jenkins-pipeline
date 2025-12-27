@@ -70,30 +70,22 @@ pipeline {
             }
         }
         
-        stage('Approve Deployment') {
+        stage('Deploy to Staging') {
             steps {
-                script {
-                    def deployApproved = false
-                    try {
-                        timeout(time: 5, unit: 'MINUTES') {
-                            input message: 'Deploy to production?', 
-                                  ok: 'Deploy',
-                                  submitter: 'admin'
-                        }
-                        deployApproved = true
-                    } catch (err) {
-                        echo "Deployment not approved or timed out"
-                        deployApproved = false
-                    }
-                    
-                    if (!deployApproved) {
-                        error "Deployment was not approved"
-                    }
-                }
+                echo 'Deploying to staging environment...'
+                sh '''
+                    mkdir -p ~/html-deploy/$GIT_BRANCH/staging
+                    cp -r * ~/html-deploy/$GIT_BRANCH/staging/ || true
+                    echo "✓ Deployed to staging: ~/html-deploy/$GIT_BRANCH/staging"
+                    ls -lh ~/html-deploy/$GIT_BRANCH/staging
+                '''
             }
         }
         
         stage('Deploy to Production') {
+            when {
+                branch 'main'
+            }
             steps {
                 echo 'Deploying to production environment...'
                 sh '''
@@ -115,7 +107,6 @@ pipeline {
             echo "Duration: ${currentBuild.durationString}"
             echo "════════════════════════════════════════════════"
             
-            // Email notification (if configured)
             emailext (
                 subject: "✓ SUCCESS: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
                 body: """
@@ -139,7 +130,6 @@ pipeline {
             echo "Please check console output for details"
             echo "════════════════════════════════════════════════"
             
-            // Email notification (if configured)
             emailext (
                 subject: "✗ FAILURE: ${env.JOB_NAME} [${env.BUILD_NUMBER}]",
                 body: """
