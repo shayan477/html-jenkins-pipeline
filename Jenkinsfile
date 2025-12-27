@@ -24,7 +24,7 @@ pipeline {
             steps {
                 echo 'Running validation tests...'
                 sh '''
-                    echo "Testing branch: ${env.GIT_BRANCH}"
+                    echo "Testing branch: $GIT_BRANCH"
                     if [ -f index.html ]; then
                         echo "✓ index.html found"
                     else
@@ -38,10 +38,10 @@ pipeline {
             steps {
                 echo 'Deploying HTML files...'
                 sh '''
-                    mkdir -p ~/html-deploy/${GIT_BRANCH}
-                    cp -r * ~/html-deploy/${GIT_BRANCH}/ || true
-                    echo "✓ Deployed to: ~/html-deploy/${GIT_BRANCH}"
-                    ls -lh ~/html-deploy/${GIT_BRANCH}
+                    mkdir -p ~/html-deploy/$GIT_BRANCH
+                    cp -r * ~/html-deploy/$GIT_BRANCH/ || true
+                    echo "✓ Deployed to: ~/html-deploy/$GIT_BRANCH"
+                    ls -lh ~/html-deploy/$GIT_BRANCH
                 '''
             }
         }
